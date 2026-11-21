@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+api/data/
+frontend/dist/
+certbot/conf/
+certbot/www/
+*.log
+.DS_Store
+nginx/conf.d/mustang.conf.ssl.bak

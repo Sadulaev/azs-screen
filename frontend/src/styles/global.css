@@ -1,0 +1,44 @@
+:root {
+  --bg-deep: #050505;
+  --bg-panel: rgba(18, 18, 20, 0.78);
+  --line: rgba(255, 255, 255, 0.55);
+  --text: #f5f5f5;
+  --muted: rgba(245, 245, 245, 0.62);
+  --amber: #c9892e;
+  --amber-hot: #e8a84a;
+  --danger: #c44;
+  --radius-pill: 999px;
+  --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --font-ui: 'Manrope', 'Segoe UI', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-deep);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+a {
+  color: var(--amber-hot);
+}
