@@ -6,13 +6,19 @@ if ! docker compose version >/dev/null 2>&1; then
   COMPOSE="docker-compose"
 fi
 
-DOMAIN="${DOMAIN:-mustang.easydev.tech}"
-CERT_PATH="./certbot/conf/live/${DOMAIN}/fullchain.pem"
-
 if [ ! -f .env ]; then
   echo "Copy .env.example → .env and set ADMIN_PASSWORD / JWT_SECRET / CERTBOT_EMAIL"
   exit 1
 fi
+
+# shellcheck disable=SC1091
+set -a
+# shellcheck source=/dev/null
+source .env
+set +a
+
+DOMAIN="${DOMAIN:-mustang.easydev.tech}"
+CERT_PATH="./certbot/conf/live/${DOMAIN}/fullchain.pem"
 
 if [ ! -f "$CERT_PATH" ]; then
   echo "No TLS cert yet — running init-letsencrypt.sh"

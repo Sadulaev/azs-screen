@@ -51,13 +51,21 @@ services:
     networks:
       - mustang
 
+  # Only renews existing certs. First issue: ./scripts/init-letsencrypt.sh
   certbot:
     image: certbot/certbot:v3.1.0
+    restart: unless-stopped
     volumes:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
     entrypoint: /bin/sh
-    command: -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"
+    command: >-
+      -c "trap exit TERM;
+      echo 'certbot renew loop — first issue: ./scripts/init-letsencrypt.sh';
+      while :; do
+        certbot renew --webroot -w /var/www/certbot;
+        sleep 12h;
+      done"
     networks:
       - mustang
     depends_on:

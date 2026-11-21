@@ -22,6 +22,14 @@ chmod +x scripts/*.sh
 
 `up-prod.sh` сам выпустит сертификат при первом запуске (через certbot) и поднимет весь стек с HTTPS.
 
+> Важно: сервис `certbot` в compose **только продлевает** уже выпущенный сертификат (`renew`).  
+> Первый выпуск — только через `./scripts/init-letsencrypt.sh` (или `./scripts/up-prod.sh` без существующего cert).
+
+Если certbot падает при выпуске (часто при **antiddos.pw**):
+1. Let's Encrypt должен открыть `http://mustang.easydev.tech/.well-known/acme-challenge/...` на вашем nginx.
+2. Временно укажите A-запись домена **напрямую на IP VPS** (минуя antiddos) → запустите `./scripts/init-letsencrypt.sh` → верните защиту.
+3. Либо в antiddos разрешите проксирование `/.well-known/acme-challenge/`.
+
 Только HTTP (без TLS), например для проверки:
 
 ```bash
@@ -34,6 +42,13 @@ docker compose up -d --build
 git pull
 ./scripts/up-prod.sh
 ```
+
+Перевыпуск сертификата вручную:
+
+```bash
+./scripts/init-letsencrypt.sh
+```
+
 
 ## Локальная разработка
 
