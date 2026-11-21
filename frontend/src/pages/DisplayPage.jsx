@@ -1,114 +1,59 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
-import FuelIcon from '../components/FuelIcon';
-import MustangLogo from '../components/MustangLogo';
+import Board from '../components/Board';
+import ScaledStage from '../components/ScaledStage';
 import '../styles/display.css';
 
 const POLL_MS = 5000;
+const CACHE_KEY = 'mustang_display_cache';
+
+function readCache() {
+  try {
+    return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
 
 export default function DisplayPage() {
-  const [config, setConfig] = useState(null);
-  const [error, setError] = useState('');
+  const [config, setConfig] = useState(readCache);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     let alive = true;
-
     const load = async () => {
       try {
         const data = await api.getConfig();
-        if (alive) {
-          setConfig(data);
-          setError('');
-        }
-      } catch (e) {
-        if (alive) setError(e.message || 'Ошибка загрузки');
+        if (!alive) return;
+        setConfig(data);
+        setOffline(false);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      } catch {
+        if (alive) setOffline(true);
       }
     };
-
     load();
     const id = setInterval(load, POLL_MS);
+    const reload = setTimeout(() => window.location.reload(), 6 * 60 * 60 * 1000);
     return () => {
       alive = false;
       clearInterval(id);
+      clearTimeout(reload);
     };
   }, []);
 
-  if (!config) {
-    return (
-      <div className="display display--loading">
-        <p>{error || 'Загрузка…'}</p>
-      </div>
-    );
-  }
-
-  const bgStyle = config.backgroundUrl
-    ? { backgroundImage: `url(${config.backgroundUrl})` }
-    : undefined;
-
-  const layout = config.layout || 'grid-2x3';
-
   return (
-    <div className={`display display--${layout}`} style={bgStyle}>
-      <div className="display__veil" />
-      <div className="display__splash display__splash--tl" aria-hidden="true" />
-      <div className="display__splash display__splash--br" aria-hidden="true" />
-
-      {layout === 'list-logo-left' ? (
-        <ListLayout config={config} />
+    <div className="display-root">
+      {config ? (
+        <ScaledStage>
+          <Board config={config} />
+        </ScaledStage>
       ) : (
-        <GridLayout config={config} />
-      )}
-    </div>
-  );
-}
-
-function GridLayout({ config }) {
-  return (
-    <div className="display__inner display__inner--grid">
-      <header className="display__header">
-        <MustangLogo logoUrl={config.logoUrl} brand={config.brand} />
-        <h1 className="display__title">{config.title}</h1>
-      </header>
-      <div className="price-grid">
-        {config.fuels.map((fuel) => (
-          <PricePill key={fuel.id} fuel={fuel} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ListLayout({ config }) {
-  return (
-    <div className="display__inner display__inner--list">
-      <aside className="display__brand-panel">
-        <MustangLogo logoUrl={config.logoUrl} brand={config.brand} />
-        <div className="display__brand-glow" aria-hidden="true" />
-      </aside>
-      <section className="display__list-panel">
-        <h1 className="display__title">{config.title}</h1>
-        <div className="price-list">
-          {config.fuels.map((fuel) => (
-            <PricePill key={fuel.id} fuel={fuel} slash />
-          ))}
+        <div className="display-loading">
+          <span className="display-loading__dot" />
         </div>
-      </section>
+      )}
+      {offline ? <span className="offline-dot" title="Нет связи с сервером" /> : null}
     </div>
-  );
-}
-
-function PricePill({ fuel, slash = false }) {
-  return (
-    <article className={`price-pill ${slash ? 'price-pill--slash' : ''}`}>
-      <div className="price-pill__left">
-        <FuelIcon type={fuel.icon} />
-        <span className="price-pill__name">{fuel.name}</span>
-      </div>
-      {slash ? <span className="price-pill__sep" aria-hidden="true" /> : null}
-      <div className="price-pill__right">
-        <span className="price-pill__price">{fuel.price}</span>
-        <span className="price-pill__unit">{fuel.unit}</span>
-      </div>
-    </article>
   );
 }
