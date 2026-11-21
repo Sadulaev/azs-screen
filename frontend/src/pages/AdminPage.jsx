@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, clearToken, getToken, setToken } from '../api';
+import {
+  DEFAULT_LOGO_URL,
+  isCustomBackground,
+  isCustomLogo,
+  resolveBackgroundUrl,
+  resolveLogoUrl,
+} from '../brand';
 import Board from '../components/Board';
 import ScaledStage from '../components/ScaledStage';
 import '../styles/display.css';
@@ -118,6 +125,25 @@ export default function AdminPage() {
     }, 'Фон загружен и применён');
   }
 
+  async function handleLogoUpload(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    await guarded(async () => {
+      const res = await api.uploadLogo(file);
+      setSaved(res);
+      setForm((prev) => ({ ...prev, logoUrl: res.logoUrl }));
+    }, 'Логотип загружен и применён');
+  }
+
+  function resetLogo() {
+    setForm((prev) => ({ ...prev, logoUrl: '' }));
+  }
+
+  function resetBackground() {
+    setForm((prev) => ({ ...prev, backgroundUrl: '' }));
+  }
+
   function reset() {
     if (!confirm('Сбросить цены и оформление к значениям по умолчанию?')) return;
     guarded(async () => apply(await api.resetConfig()), 'Сброшено');
@@ -144,8 +170,7 @@ export default function AdminPage() {
     return (
       <div className="adm adm--login">
         <form className="login-card" onSubmit={handleLogin}>
-          <div className="login-card__mark">М</div>
-          <h1>МУСТАНГ</h1>
+          <img className="login-card__logo" src={DEFAULT_LOGO_URL} alt="МУСТАНГ" draggable={false} />
           <p className="muted">Управление табло цен</p>
           <input
             type="password"
@@ -312,25 +337,54 @@ export default function AdminPage() {
             ))}
           </div>
 
-          <div className="field-label">Фон</div>
+          <div className="field-label">Логотип</div>
           <div className="bg-picker">
-            <div
-              className={`bg-picker__thumb ${form.backgroundUrl ? '' : 'is-default'}`}
-              style={form.backgroundUrl ? { backgroundImage: `url(${form.backgroundUrl})` } : undefined}
-            >
-              {form.backgroundUrl ? null : <span>Встроенный</span>}
+            <div className="bg-picker__thumb bg-picker__thumb--logo">
+              <img src={resolveLogoUrl(form.logoUrl)} alt="Логотип" />
             </div>
             <div className="bg-picker__actions">
               <label className="btn btn--ghost">
-                Загрузить картинку
+                Загрузить другой
+                <input type="file" accept="image/*" hidden onChange={handleLogoUpload} />
+              </label>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={resetLogo}
+                disabled={!isCustomLogo(form.logoUrl)}
+              >
+                Вернуть по умолчанию
+              </button>
+              <small className="muted">
+                {isCustomLogo(form.logoUrl) ? 'Сейчас свой файл' : 'Сейчас стандартный МУСТАНГ'}
+              </small>
+            </div>
+          </div>
+
+          <div className="field-label">Фон</div>
+          <div className="bg-picker">
+            <div
+              className="bg-picker__thumb"
+              style={{ backgroundImage: `url(${resolveBackgroundUrl(form.backgroundUrl)})` }}
+            />
+            <div className="bg-picker__actions">
+              <label className="btn btn--ghost">
+                Загрузить другой
                 <input type="file" accept="image/*" hidden onChange={handleUpload} />
               </label>
-              {form.backgroundUrl ? (
-                <button type="button" className="btn btn--ghost" onClick={() => setForm({ ...form, backgroundUrl: '' })}>
-                  Встроенный фон
-                </button>
-              ) : null}
-              <small className="muted">Лучше 1920×1080, JPG до 12 МБ</small>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={resetBackground}
+                disabled={!isCustomBackground(form.backgroundUrl)}
+              >
+                Вернуть по умолчанию
+              </button>
+              <small className="muted">
+                {isCustomBackground(form.backgroundUrl)
+                  ? 'Сейчас свой фон'
+                  : 'Сейчас стандартный фон · 1920×1080'}
+              </small>
             </div>
           </div>
 
@@ -341,7 +395,7 @@ export default function AdminPage() {
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </label>
             <label className="field">
-              <span>Бренд</span>
+              <span>Бренд (alt логотипа)</span>
               <input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
             </label>
             <button type="button" className="btn btn--danger-ghost" onClick={reset} disabled={busy}>
